@@ -1,0 +1,125 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+.input-container {
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center
+}
+
+.heading {
+    font-size: 30px;
+    margin-bottom: 30px;
+    font-weight: bold;
+}
+
+.input-question {
+    width: 400px;
+    height: 50px;
+    margin-bottom: 20px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    padding: 10px;
+    font-size: 16px;
+    margin-right: 10px;
+}
+
+.input-answer {
+    width: 400px;
+    height: 50px;
+    margin-bottom: 20px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    padding: 10px;
+    font-size: 16px;
+}
+
+.save-btn {
+    width: 100px;
+    height: 50px;
+    background: #584f4f;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 10px;
+    margin-top: 20px;
+    cursor: pointer;
+}
+
+.save-btn button {
+    background: transparent;
+    border: none;
+    color: #fff;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+/* FAQ SECTION */
+.faq-heading {
+    margin-top: 30px;
+    margin-bottom: 10px;
+    font-size: 22px;
+    font-weight: bold;
+    color: #222;
+}
+
+/* BUTTON */
+.fetch-btn {
+    background-color: #007bff;
+    color: #fff;
+    border: none;
+    padding: 8px 14px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    margin-bottom: 15px;
+    transition: background 0.2s ease;
+}
+
+.fetch-btn:hover {
+    background-color: #0056b3;
+}
+
+/* LIST */
+.faq-list {
+    list-style: none;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+/* FAQ CARD */
+.faq-item {
+    background: #ffffff;
+    border-radius: 10px;
+    padding: 14px 16px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.06);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.faq-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 14px rgba(0, 0, 0, 0.1);
+}
+
+/* QUESTION */
+.faq-question {
+    font-size: 16px;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 6px;
+}
+
+/* ANSWER */
+.faq-answer {
+    font-size: 14px;
+    color: #555;
+    line-height: 1.6;
+}
