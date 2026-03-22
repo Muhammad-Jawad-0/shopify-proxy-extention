@@ -1,0 +1,135 @@
+Shopify Node App Template (Remix / Express)
+
+
+CAMMAND
+
+shopify app generate extension
+
+? Choose extension type
+
+Theme App Extension
+
+FOLDER CREATED:
+
+extensions/
+   my-theme-extension/
+      blocks/
+      snippets/
+      assets/
+      locales/
+      shopify.extension.toml
+
+
+
+shopify app deploy
+
+shopify app dev
+
+Agar tumhe storefront se backend API call karni hai to App Proxy use hota hai.
+
+shopify.app.toml open karo
+
+[app_proxy]
+url = "https://yourserver.com/api"
+subpath = "customizer"
+prefix = "apps"
+
+
+https://store.com/apps/customizer
+
+8️⃣ Proxy request example
+
+Frontend:
+
+fetch("/apps/customizer")
+  .then(res => res.json())
+  .then(data => console.log(data));
+
+
+BACKEND:
+
+app.get("/api", (req, res) => {
+  res.json({ message: "Hello from app proxy" });
+});
+
+
+
+INDEX.js
+
+// @ts-ignore
+async function authenticateUser(req, res, next) {
+  let shop = req.query.shop;
+  let storeName = await shopify.config.sessionStorage.findSessionsByShop(shop);
+  console.log("storename for view", storeName);
+  console.log("Shop for view", shop);
+  if (shop === storeName[0].shop) {
+    next();
+  } else {
+    res.send("User is not Authorized");
+  }
+}
+
+
+app.use("/api/*", shopify.validateAuthenticatedSession());
+app.use("/proxy/*", authenticateUser); <<<<<<<<<<<<<< ADD THIS LINE
+
+THEN ADD ROUTE
+
+const routes = [PaybackRouter, ProductRouter, StoreRouter]
+
+routes.forEach((route) => {
+  app.use("/api", route);
+  app.use("/proxy", route); <<<<<<<<<<<<<< ADD THIS LINE
+})
+
+
+
+================================== App Review Submission Form =================================
+
+1)Jo new .toml file banegi. usma sare "authentication" wagera dalega.
+
+==========Authentication========
+---------------------------------------------------
+[webhooks]
+api_version = "2026-04"
+
+[[webhooks.subscriptions]]
+uri = "/webhooks/customers/data_request"
+compliance_topics = ["customers/data_request"]
+
+[[webhooks.subscriptions]]
+uri = "/webhooks/customers/redact"
+compliance_topics = ["customers/redact"]
+
+[[webhooks.subscriptions]]
+uri = "/webhooks/shop/redact"
+compliance_topics = ["shop/redact"]
+
+-----------------------------------------------------
+[auth]
+redirect_urls = [
+  "https://bulk-seo-titles-a47e5c3bb1e8.herokuapp.com/auth/callback",
+  "https://bulk-seo-titles-a47e5c3bb1e8.herokuapp.com/auth/shopify/callback",
+  "https://bulk-seo-titles-a47e5c3bb1e8.herokuapp.com/api/auth/callback",
+]
+
+--------------------------------------------------------------------------
+
+scopes = "read_assigned_fulfillment_orders,read_cart_transforms,read_checkout_branding_settings,read_content,read_customer_events,read_customer_merge,read_customers,read_delivery_customizations,read_discounts,read_draft_orders,read_files,read_fulfillments,read_gift_cards,read_inventory,read_legal_policies,read_locales,read_locations,read_marketing_events,read_merchant_managed_fulfillment_orders,read_online_store_pages,read_orders,read_price_rules,read_products,read_publications,read_reports,read_resource_feedbacks,read_script_tags,read_shipping,read_shopify_payments_disputes,read_shopify_payments_payouts,read_themes,read_third_party_fulfillment_orders,write_assigned_fulfillment_orders,write_cart_transforms,write_checkout_branding_settings,write_content,write_customer_merge,write_customers,write_delivery_customizations,write_discounts,write_draft_orders,write_files,write_fulfillments,write_gift_cards,write_inventory,write_locales,write_locations,write_marketing_events,write_merchant_managed_fulfillment_orders,write_order_edits,write_orders,write_pixels,write_price_rules,write_products,write_publications,write_reports,write_resource_feedbacks,write_script_tags,write_shipping,write_themes,write_third_party_fulfillment_orders"
+
+
+
+
+
+
+2) shopify app deploy <<<<<<<<<, run
+3)"vist dev dashboard" << ke ander jao. settings ma jao. or app ka icon dalo.
+4)"fix and settings" <<< usma email dena huga.
+5) "create your listing content" <<<< ma jakr form mil jaega.
+
+
+
+
+
+
+
