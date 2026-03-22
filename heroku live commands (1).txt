@@ -1,0 +1,17 @@
+heroku container:login
+heroku create -a Trilog-Discount -s container
+npm run shopify app  env show
+git add .
+git commit -am "first commit "
+git push heroku main 
+
+
+
+====================:create heroku.yml file:=====================
+
+
+build:
+  docker:
+    web: Dockerfile
+  config:
+    SHOPIFY_API_KEY: 857ce036c8005593e6c99c0607d61208
