@@ -83,6 +83,19 @@ routes.forEach((route) => {
 })
 
 
+---------------------- END ma
+
+frontend folder ke ander Vite file ma proxy add kro.
+
+proxy: {
+      "^/(\\?.*)?$": proxyOptions,
+      "^/api(/|(\\?.*)?$)": proxyOptions,
+      "^/proxy(/|(\\?.*)?$)": proxyOptions,
+    },
+
+
+issy proxy proper work krega.
+
 
 ================================== App Review Submission Form =================================
 
