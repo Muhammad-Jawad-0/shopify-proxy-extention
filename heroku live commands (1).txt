@@ -7,6 +7,30 @@ git push heroku main
 
 
 
+[webhooks]
+api_version = "2026-07"
+
+[[webhooks.subscriptions]]
+uri = "/webhooks/customers/data_request"
+compliance_topics = ["customers/data_request"]
+
+[[webhooks.subscriptions]]
+uri = "/webhooks/customers/redact"
+compliance_topics = ["customers/redact"]
+
+[[webhooks.subscriptions]]
+uri = "/webhooks/shop/redact"
+compliance_topics = ["shop/redact"]
+
+----------------------------------------------------------
+[auth]
+redirect_urls = [
+    "https://expresspod-app-3eaa467323dd.herokuapp.com/auth/callback",
+    "https://expresspod-app-3eaa467323dd.herokuapp.com/auth/shopify/callback",
+    "https://expresspod-app-3eaa467323dd.herokuapp.com/api/auth/callback",
+]
+
+
 ====================:create heroku.yml file:=====================
 
 
