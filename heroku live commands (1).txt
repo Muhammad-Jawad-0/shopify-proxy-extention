@@ -22,6 +22,15 @@ compliance_topics = ["customers/redact"]
 uri = "/webhooks/shop/redact"
 compliance_topics = ["shop/redact"]
 
+-------------------------------------------------------------
+[[webhooks.subscriptions]]
+compliance_topics = [
+    "customers/data_request",
+    "customers/redact",
+    "shop/redact",
+]
+uri = "https://announceflow-23ea35b4ffb5.herokuapp.com/api/webhooks"
+
 ----------------------------------------------------------
 [auth]
 redirect_urls = [
