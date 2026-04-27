@@ -1,0 +1,371 @@
+// =========================== ADD PRODUCT IN SHOPIFY STORE ===========================
+
+const AddProducts = async (req, res) => {
+  const { title, description, image_url, ProductId, price } = req.body;
+
+  // 1. Validate inputs
+  const missingFields = [];
+  if (!title) missingFields.push("title");
+  if (!description) missingFields.push("description");
+  if (!image_url || !Array.isArray(image_url) || !image_url.length) missingFields.push("image_url");
+  if (!ProductId) missingFields.push("ProductId");
+  if (!price) missingFields.push("price");
+
+  if (missingFields.length) {
+    return res.status(400).json({
+      status: 400,
+      message: `Missing required fields: ${missingFields.join(", ")}`,
+    });
+  }
+
+  // 2. Parse price
+  let parsedPrice;
+  try {
+    parsedPrice = parseFloat(typeof price === "string" ? price.split("-")[0].trim() : price);
+    if (isNaN(parsedPrice)) throw new Error("Invalid price");
+  } catch (err) {
+    return res.status(400).json({
+      status: 400,
+      message: `Price error: ${err.message}`,
+    });
+  }
+  const priceString = parsedPrice.toFixed(2);
+
+  try {
+    const session = res.locals.shopify.session;
+    const client = new shopify.api.clients.Graphql({ session });
+
+    // 3. Create Product
+    const createProductMutation = `
+      mutation CreateProduct($input: ProductInput!) {
+        productCreate(input: $input) {
+          product { id }
+          userErrors { field message }
+        }
+      }
+    `;
+    const productInput = {
+      title,
+      descriptionHtml: description,
+      productType: "Custom Import",
+      status: "ACTIVE",
+      metafields: [{
+        namespace: "custom",
+        key: "amazonurl3",
+        value: "Random 2 products",
+        type: "single_line_text_field"
+      }]
+    };
+    const createRes = await client.query({
+      data: { query: createProductMutation, variables: { input: productInput } },
+    });
+
+    const createData = createRes.body.data?.productCreate;
+    if (!createData || createData.userErrors.length) {
+      const errorMessages = createData.userErrors.map(e => `${e.field}: ${e.message}`).join("; ");
+      return res.status(400).json({ message: `Product creation failed: ${errorMessages}` });
+    }
+
+    const productId = createData.product.id;
+
+    // 4. Publish to Online Store
+    const publicationQuery = `
+      query {
+        publications(first: 10) {
+          edges {
+            node {
+              id
+              name
+            }
+          }
+        }
+      }
+    `;
+    const pubRes = await client.query({ data: { query: publicationQuery } });
+    const publications = pubRes.body.data?.publications?.edges || [];
+    const onlineStore = publications.find(pub => pub.node.name === "Online Store");
+    if (!onlineStore) {
+      return res.status(500).json({ message: "Online Store publication not found" });
+    }
+
+    const publishMutation = `
+      mutation Publish($id: ID!, $publicationId: ID!) {
+        publishablePublish(id: $id, input: { publicationId: $publicationId }) {
+          publishable { ... on Product { id } }
+          userErrors { field message }
+        }
+      }
+    `;
+    const publishRes = await client.query({
+      data: {
+        query: publishMutation,
+        variables: {
+          id: productId,
+          publicationId: onlineStore.node.id,
+        },
+      },
+    });
+    const publishData = publishRes.body.data?.publishablePublish;
+    if (!publishData || publishData.userErrors.length) {
+      const errorMessages = publishData.userErrors.map(e => `${e.field}: ${e.message}`).join("; ");
+      return res.status(400).json({ message: `Publishing failed: ${errorMessages}` });
+    }
+
+    // 5. Upload Images
+    const mediaMutation = `
+      mutation AddImages($productId: ID!, $media: [CreateMediaInput!]!) {
+        productCreateMedia(productId: $productId, media: $media) {
+          media { ... on MediaImage { mediaErrors { message } } }
+          userErrors { field message }
+        }
+      }
+    `;
+    const mediaPayload = image_url.map(url => ({
+      mediaContentType: "IMAGE",
+      originalSource: url,
+    }));
+    await client.query({
+      data: {
+        query: mediaMutation,
+        variables: { productId, media: mediaPayload },
+      },
+    });
+
+    // 6. Fetch and update variant price/SKU
+    const getVariantsQuery = `
+      query ($id: ID!) {
+        product(id: $id) {
+          variants(first: 1) { nodes { id } }
+        }
+      }
+    `;
+    const variantRes = await client.query({
+      data: { query: getVariantsQuery, variables: { id: productId } },
+    });
+    const variantId = variantRes.body.data?.product?.variants?.nodes?.[0]?.id;
+    if (!variantId) return res.status(500).json({ message: "No variant found to update" });
+
+    const variantUpdateMutation = `
+      mutation UpdateVariant($productId: ID!, $variants: [ProductVariantsBulkInput!]!) {
+        productVariantsBulkUpdate(productId: $productId, variants: $variants) {
+          productVariants { id price inventoryItem { sku } }
+          userErrors { field message }
+        }
+      }
+    `;
+    await client.query({
+      data: {
+        query: variantUpdateMutation,
+        variables: {
+          productId,
+          variants: [{
+            id: variantId,
+            price: priceString,
+            sku: `amazon-${ProductId}`,
+          }],
+        },
+      },
+    });
+
+    // 7. Success response
+    return res.status(200).json({
+      success: true,
+      message: "Product added and published successfully via GraphQL",
+      shopifyProductId: productId,
+    });
+
+  } catch (error) {
+    console.error("GraphQL Product Upload Error:", error);
+    return res.status(500).json({
+      success: false,
+      message: error.message || "Unexpected error",
+    });
+  }
+};
+
+---------------------------------------------------------
+SAME FUNCTION
+--------------------------------------------------------
+
+const AddProducts = async (req, res) => {
+  const { title, description, image_url, ProductId, price } = req.body;
+
+  // 1. Validate inputs
+  const missingFields = [];
+  if (!title) missingFields.push("title");
+  if (!description) missingFields.push("description");
+  if (!image_url || !Array.isArray(image_url) || !image_url.length) missingFields.push("image_url");
+  if (!ProductId) missingFields.push("ProductId");
+  if (!price) missingFields.push("price");
+
+  if (missingFields.length) {
+    return res.status(400).json({
+      status: 400,
+      message: `Missing required fields: ${missingFields.join(", ")}`,
+    });
+  }
+
+  // 2. Parse price
+  let parsedPrice;
+  try {
+    parsedPrice = parseFloat(typeof price === "string" ? price.split("-")[0].trim() : price);
+    if (isNaN(parsedPrice)) throw new Error("Invalid price");
+  } catch (err) {
+    return res.status(400).json({
+      status: 400,
+      message: `Price error: ${err.message}`,
+    });
+  }
+  const priceString = parsedPrice.toFixed(2);
+
+  try {
+    const session = res.locals.shopify.session;
+    const client = new shopify.api.clients.Graphql({ session });
+
+    // 3. Create Product
+    const createProductMutation = `
+      mutation CreateProduct($input: ProductInput!) {
+        productCreate(input: $input) {
+          product { id }
+          userErrors { field message }
+        }
+      }
+    `;
+    const productInput = {
+      title,
+      descriptionHtml: description,
+      productType: "Custom Import",
+      status: "ACTIVE",
+      metafields: [{
+        namespace: "custom",
+        key: "amazonurl3",
+        value: "Random 2 products",
+        type: "single_line_text_field"
+      }]
+    };
+    const createRes = await client.query({
+      data: { query: createProductMutation, variables: { input: productInput } },
+    });
+
+    const createData = createRes.body.data?.productCreate;
+    if (!createData || createData.userErrors.length) {
+      const errorMessages = createData.userErrors.map(e => `${e.field}: ${e.message}`).join("; ");
+      return res.status(400).json({ message: `Product creation failed: ${errorMessages}` });
+    }
+
+    const productId = createData.product.id;
+
+    // 4. Publish to Online Store
+    const publicationQuery = `
+      query {
+        publications(first: 10) {
+          edges {
+            node {
+              id
+              name
+            }
+          }
+        }
+      }
+    `;
+    const pubRes = await client.query({ data: { query: publicationQuery } });
+    const publications = pubRes.body.data?.publications?.edges || [];
+    const onlineStore = publications.find(pub => pub.node.name === "Online Store");
+    if (!onlineStore) {
+      return res.status(500).json({ message: "Online Store publication not found" });
+    }
+
+    const publishMutation = `
+      mutation Publish($id: ID!, $publicationId: ID!) {
+        publishablePublish(id: $id, input: { publicationId: $publicationId }) {
+          publishable { ... on Product { id } }
+          userErrors { field message }
+        }
+      }
+    `;
+    const publishRes = await client.query({
+      data: {
+        query: publishMutation,
+        variables: {
+          id: productId,
+          publicationId: onlineStore.node.id,
+        },
+      },
+    });
+    const publishData = publishRes.body.data?.publishablePublish;
+    if (!publishData || publishData.userErrors.length) {
+      const errorMessages = publishData.userErrors.map(e => `${e.field}: ${e.message}`).join("; ");
+      return res.status(400).json({ message: `Publishing failed: ${errorMessages}` });
+    }
+
+    // 5. Upload Images
+    const mediaMutation = `
+      mutation AddImages($productId: ID!, $media: [CreateMediaInput!]!) {
+        productCreateMedia(productId: $productId, media: $media) {
+          media { ... on MediaImage { mediaErrors { message } } }
+          userErrors { field message }
+        }
+      }
+    `;
+    const mediaPayload = image_url.map(url => ({
+      mediaContentType: "IMAGE",
+      originalSource: url,
+    }));
+    await client.query({
+      data: {
+        query: mediaMutation,
+        variables: { productId, media: mediaPayload },
+      },
+    });
+
+    // 6. Fetch and update variant price/SKU
+    const getVariantsQuery = `
+      query ($id: ID!) {
+        product(id: $id) {
+          variants(first: 1) { nodes { id } }
+        }
+      }
+    `;
+    const variantRes = await client.query({
+      data: { query: getVariantsQuery, variables: { id: productId } },
+    });
+    const variantId = variantRes.body.data?.product?.variants?.nodes?.[0]?.id;
+    if (!variantId) return res.status(500).json({ message: "No variant found to update" });
+
+    const variantUpdateMutation = `
+      mutation UpdateVariant($productId: ID!, $variants: [ProductVariantsBulkInput!]!) {
+        productVariantsBulkUpdate(productId: $productId, variants: $variants) {
+          productVariants { id price inventoryItem { sku } }
+          userErrors { field message }
+        }
+      }
+    `;
+    await client.query({
+      data: {
+        query: variantUpdateMutation,
+        variables: {
+          productId,
+          variants: [{
+            id: variantId,
+            price: priceString,
+            sku: `amazon-${ProductId}`,
+          }],
+        },
+      },
+    });
+
+    // 7. Success response
+    return res.status(200).json({
+      success: true,
+      message: "Product added and published successfully via GraphQL",
+      shopifyProductId: productId,
+    });
+
+  } catch (error) {
+    console.error("GraphQL Product Upload Error:", error);
+    return res.status(500).json({
+      success: false,
+      message: error.message || "Unexpected error",
+    });
+  }
+};
