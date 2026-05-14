@@ -141,3 +141,27 @@ get product store data controller
 //     });
 //   }
 // }
+
+==============================================================
+
+
+// Check if product should show extension
+// export async function checkProductExtension(req, res) {
+//   try {
+//     const { productId } = req.query;
+//     const session = res.locals.shopify.session;
+//     const shopDomain = session.shop
+
+//     const config = await ConfigModel.findOne({ shop: shopDomain });
+//     const isAllowed = config?.productIds?.includes(productId?.toString());
+
+//     res.json({
+//       success: true,
+//       allowed: isAllowed || false
+//     });
+
+//   } catch (error) {
+//     console.error("Check error:", error);
+//     res.status(500).json({ success: false, allowed: false });
+//   }
+// }
